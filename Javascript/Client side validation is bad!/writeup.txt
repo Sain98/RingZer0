@@ -1,0 +1,37 @@
+Challenge location: https://ringzer0team.com/challenges/27
+
+Getting started:
+In this challenge the title was a nice giveaway
+
+Since the title said "Client Side" validation i assumed the script would be on the login page itself (client side) or atleast accesible somewhere on the page.
+So after quickly scrolling trough the source code from our login page i found a "interesting" script tag right below the login form
+in this script it was easy to see that the users where hardcoded in here.
+The admin and his password where visible thanks to their script.
+However his password was not a normal string it looks like the numbers are simply the ascii codes for the corresponding letters
+But since its still a javascript function the builtin console on my Google Chrome webbrowser was able to print out the password
+in a readable format quite easy
+
+password = String.fromCharCode(74,97,118,97,83,99,114,105,112,116,73,115,83,101,99,117,114,101)
+decoded password = "JavaScriptIsSecure"
+
+The script found in the source code
+[code]
+
+		<script>
+			// Look's like weak JavaScript auth script :)
+			$(".c_submit").click(function(event) {
+				event.preventDefault()
+				var u = $("#cuser").val();
+				var p = $("#cpass").val();
+				if(u == "admin" && p == String.fromCharCode(74,97,118,97,83,99,114,105,112,116,73,115,83,101,99,117,114,101)) {
+				    if(document.location.href.indexOf("?p=") == -1) {   
+				        document.location = document.location.href + "?p=" + p;
+				    }
+				} else {
+				    $("#cresponse").html("<div class='alert alert-danger'>Wrong password sorry.</div>");
+				}
+			});
+		</script>
+
+
+[/code]

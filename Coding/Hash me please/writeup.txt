@@ -1,0 +1,216 @@
+Well the challenge is quite self explanatory
+
+They give a message
+And its up to us to hash it trough SHA512
+we just have to do it under 2 seconds
+
+The source code for the program i used will be at the bottom of the file
+written in Python
+
+====================================
+==	Breaking down the task first  ==
+====================================
+
+	1. first we gotta set up a connection with the website
+	
+	2. Then we gotta make it log in to our account
+	
+	3. Now we are logged in we want to setup all the variables etc. we will need
+		(We dont want to start loading stuff when the timer is already started)
+		
+	4. After everything is setup we start
+		4.1		Get the webpage and its contents from https://ringzer0team.com/challenges/13
+		4.2		Extract the message from the loaded webpage
+		4.3		Hash the message
+	
+	5. We hashed the message now to sent it:
+		They requested us to sumbit the answer in a url they gave us so that would be:
+			https://ringzer0team.com/challenges/13/[THE HASHED MESSAGE]
+			
+	6. To be able to get the FLAG do not use a post method on submitting the hashed message
+		I used the get method (from the requests library in python)
+		so we use 's.get(the_url_with_the_hashed_message)'
+		(might be more clear in the source code of my program)
+		
+	7. We got the page with the flag loaded now
+		i decided the easiest was to simply write it to a simple .html file
+		
+	8. Program is done
+		Because i saved the final page i can simply open it and see the flag
+		
+		
+====================================
+===	SOURCE CODE (PYTHON 3)   ===
+====================================
+# Note: You need to edit some variables for this to work
+# The USER_NAME and USER_PASS need your username and password
+# The program would not work otherwise as it cant login :p
+# ======================================================
+# Challenge url: https://ringzer0team.com/challenges/13
+# Challenge: Hash me please
+# Objective: hash the given message with SHA512
+# message location = <div class="message">
+# ======================================================
+__author__ = "_sain"
+
+import requests
+from html.parser import HTMLParser
+from Crypto.Hash import SHA512
+
+
+global needed_data
+needed_data = ""
+
+"""
+############################
+#        HTML PARSER       #
+############################
+"""
+
+class html_parser(HTMLParser):
+    def __init__(self, accept_all):
+        # initialize the parser
+        self.accept_data = accept_all    # Starts off with false by default
+        self.contents = ""               # Empty string for the loaded pages
+        HTMLParser.__init__(self)
+        
+    def handle_starttag(self, tag, attrs):
+        # Reads the start tag
+        # Not accepting any data until the tag class = "message"
+        if tag == "div":
+            for attr in attrs:
+                if attr == ("class", "message"):
+                    # The message we need is here
+                    self.accept_data = True
+            
+    def handle_endtag(self, tag):
+        # Reads the ending tag
+        # Stops accepting data if it reads the ending tag from the message
+        if tag == "div":
+            self.accept_data = False
+            # dont need it to do anything else as it only gets to do it for this tag
+            # because the accept_data parameter wont allow it unless we are inbetween
+            # these 2 tags ( <div class="message"> MESSAGE WE NEED </div> )
+            
+    def handle_data(self, data):
+        # Only reads the data if we are accepting it
+        if self.accept_data == True:
+            # read data
+            global needed_data
+            needed_data += data
+        else:
+            # not accepting data
+            # not reading it
+            return
+        
+
+# Login to the website
+def login(s):
+    # login page
+    # send username, password
+    # id user: username
+    # id pass: password
+    LOGIN_URL = "https://ringzer0team.com/login"
+    USER_NAME = 'username'
+    USER_PASS = 'password'
+    
+    login_data = dict(username = USER_NAME, password = USER_PASS)
+    
+    s.post(LOGIN_URL, data=login_data)
+    
+
+# Hash the given message    
+def hash_message(message, hasher):
+    # hash the message and return it
+    hashed_message = ""
+    
+    # Splitting up the message lets us skip the --start and end message stuff quite easy
+    # As it only reads the part containing the message we need to hash now
+    
+    message = message.split()			# Splits up the large message so we can select the parts we need
+    
+    message = message[4]				# Selects the part off the message we need
+										# (we dont need --start and end message-- parts)
+    
+    hasher.update(message)  			# Hashes the message
+    
+    hashed_message = hasher.hexdigest()	# Gets the hashed message and stores it into the hashed_message
+										# So it can be returned
+    
+    return hashed_message
+    
+
+# Read the given message from the webpage
+# Or stores the final page with the flag (if save_page = true)  
+def get_message(s, html_pars, url, save_page):
+    # Read the message from the webpage
+    # Using the html parser
+    # URL: https://ringzer0team.com/challenges/13
+    # return it so it can be stored and passed to hash message
+    
+    parser = html_pars                    # Sets the html parser up
+    
+    loaded_webpage = s.get(url).text        # Loads the webpage (starts the 2 second counter)
+    
+    if save_page:									# if save_page == True
+        with open('saved_page.html', 'w+') as f:	# write the loaded page to saved_page.html
+            f.write(loaded_webpage)
+        print("[*] Response page stored")			# Finished writing the page
+            
+    else:										# We dont need to save the page? sends it to the html parser
+        message = parser.feed(loaded_webpage)   # Gets the message from the loaded webpage
+        
+        return message
+    
+
+# Send the hashed message    
+def send_message(s, data, html_pars):
+    # Send the hashed message to the target url
+    # https://ringzer0team.com/challenges/13/[message]
+    
+    hashed_message = data
+	
+    target_url = "https://ringzer0team.com/challenges/13/" + hashed_message
+	# ^^ The url where the flag should be located
+    
+    get_message(s, html_pars, target_url, True)	# We want to store the page where the flag is located
+												# As we would not be able to read it 
+												# unless you modify the code but i tought this was easier
+    
+    
+if __name__ == "__main__":
+    print("[*] Starting up...")
+    
+    # html parser    
+    print("[*] Initializing HTML parser")
+    html_pars = html_parser(False)  # parameter is so it does not accept everything it reads from the page
+    print("[*] Parser initalized")  # (still need to find the message)
+    
+    # SHA512 hasher
+    print("[*] Preparing hash function")
+    hasher = SHA512.new()
+    print("[*] Hasher ready")
+    
+    URL = "https://ringzer0team.com/challenges/13"
+    
+    with requests.Session() as s:
+        login(s)
+    
+        print("[*] Logged in")
+        
+        get_message(s, html_pars, URL, False)
+        message = needed_data
+        
+        print("[*] Got the message")
+        
+        print("[*] Hashing message")
+        
+        hashed_message = hash_message(message, hasher)
+        
+        print("[*] Finished hashing message")
+        
+        send_message(s, hashed_message, html_pars)
+        
+        print("[*] Message sent")
+		
+		print("[*] Program finished")

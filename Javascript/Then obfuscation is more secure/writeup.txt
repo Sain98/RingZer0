@@ -1,0 +1,84 @@
+Challenge location : https://ringzer0team.com/challenges/31
+
+this one also has its script in the source code
+The only problem this time is that its mainly converted into hexcode but there still are normal words in there
+so pasting the entire script into a translator would not properly translate it
+
+Note: the original script in hex is at the bottom of this file
+
+Decoding the script:
+	Using a small script i quickly wrote trough the builtin console in Google Chrome (also in FireFox if you wanna know),
+	I was able to see the values for what seems to be the main variable
+	
+	(Since i was lazy i just put a random number in that seemed close,
+		to how many values where in the array.
+		undefined = null or empty so thats where it stops)
+	
+	Note: i did define the variable before doing this by just copy-pasting the entire array
+	
+	var _0xc360:
+		for (i = 0; i < 15; i++) { console.log(i + " : " + _0xc360[i]); }
+			0 : val
+			1 : #cpass
+			2 : alk3
+			3 : 02l1
+			4 : ?p=
+			5 : indexOf
+			6 : href
+			7 : location
+			8 : <div class='error'>Wrong password sorry.</div>
+			9 : html
+			10 : #cresponse
+			11 : click
+			12 : .c_submit
+			13 : undefined
+			14 : undefined
+			
+	Now we know more or less what is in the script as everything comes from the array we decoded above
+	
+	Based on the if statements and comparison the the previous challenges it seemed very likely that the login function
+	is in this mess
+	having all the values from _0xc360 it is not hard to figure out that the "else" statement will simply say "wrong password"
+	
+	Looking into the if statements:
+		var _0xf382x1=$(_0xc360[1])[_0xc360[0]]();		-> var _0xf382x1=$("#cpass").val(); - This is a loose "translation" following the previous code and the variables we have
+		var _0xf382x2=_0xc360[2];						-> var _0xf382x2="alk3";		    - Possible password or a part of it?
+		
+		Hex code:
+			if(_0xf382x1==_0xc360[3]+_0xf382x2){		-> if ((#cpass).val == "0211alk3")	- Again loose translation but it looks like we found our password
+				if(document[_0xc360[7]][_0xc360[6]][_0xc360[5]](_0xc360[4])==-1){	-> if(document.location(href="indexOf?p=") == -1)
+					document[_0xc360[7]]=document[_0xc360[7]][_0xc360[6]]+_0xc360[4]+_0xf382x1;};
+						-> document.location = document.location(href="indexOf?p=#cpass")	-> this should reload the page but it will now have the code for the flag
+			}
+
+		
+Original hex code:
+		<script>
+			// Look's like weak JavaScript auth script :)
+			var _0xc360=["\x76\x61\x6C",
+			"\x23\x63\x70\x61\x73\x73",
+			"\x61\x6C\x6B\x33",
+			"\x30\x32\x6C\x31",
+			"\x3F\x70\x3D",
+			"\x69\x6E\x64\x65\x78\x4F\x66",
+			"\x68\x72\x65\x66",
+			"\x6C\x6F\x63\x61\x74\x69\x6F\x6E",
+			"\x3C\x64\x69\x76\x20\x63\x6C\x61\x73\x73\x3D\x27\x65\x72\x72\x6F\x72\x27\x3E\x57\x72\x6F\x6E\x67\x20\x70\x61\x73\x73\x77\x6F\x72\x64\x20\x73\x6F\x72\x72\x79\x2E\x3C\x2F\x64\x69\x76\x3E",
+			"\x68\x74\x6D\x6C","\x23\x63\x72\x65\x73\x70\x6F\x6E\x73\x65",
+			"\x63\x6C\x69\x63\x6B","\x2E\x63\x5F\x73\x75\x62\x6D\x69\x74"];
+			
+			$(_0xc360[12])[_0xc360[11]](function (){
+				var _0xf382x1=$(_0xc360[1])[_0xc360[0]]();
+				var _0xf382x2=_0xc360[2];
+				if(_0xf382x1==_0xc360[3]+_0xf382x2){
+					if(document[_0xc360[7]][_0xc360[6]][_0xc360[5]](_0xc360[4])==-1){
+						document[_0xc360[7]]=document[_0xc360[7]][_0xc360[6]]+_0xc360[4]+_0xf382x1;
+						};
+					}
+					else
+					{
+						$(_0xc360[10])[_0xc360[9]](_0xc360[8]);
+					};
+				}
+			);
+		</script>
